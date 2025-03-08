@@ -1,0 +1,73 @@
+use nalgebra::Vector3;
+use std::fs::File;
+use std::io::Write;
+
+// not a new struct, we want a Newtype pattern, essentially a wrapper for Vector3<f32>
+pub struct Colour(Vector3<f32>);
+
+impl Colour {
+    pub fn new() -> Self {
+            Colour(Vector3::zeros())
+    }
+
+    pub fn new_from(r: f32, g: f32, b: f32) -> Self {
+            Colour(Vector3::new(r, g, b))
+    }
+
+    /// Returns the red component.
+    pub fn r(&self) -> f32 {
+        self.0.x
+    }
+    
+    /// Returns the green component.
+    pub fn g(&self) -> f32 {
+        self.0.y
+    }
+    
+    /// Returns the blue component.
+    pub fn b(&self) -> f32 {
+        self.0.z
+    }
+}
+
+pub fn write_colour(mut file: &File, pixel_colour: Colour) -> Result<(), Box<dyn std::error::Error>> {
+    // write one line of pixel data to file
+
+    // let r = pixel.colour.x;
+    // let g = pixel_colour.y;
+    // let b = pixel_colour.z;
+
+    let ir = (255.999*pixel_colour.r()) as i32;
+    let ig = (255.999*pixel_colour.g()) as i32;
+    let ib = (255.999*pixel_colour.b()) as i32;
+
+    let pixel_data = format!("{} {} {}\n", ir, ig, ib);
+    // performance note: if the project gets bigger, store pixel_data in a vector and print everything at the end
+    
+    // if I'm using as_bytes, I'm putting it into the wrong format initally
+    // just put it in the right format to start with
+    file.write_all(pixel_data.as_bytes())?;
+
+    Ok(())
+}
+
+/*
+
+This stuff lets you access Vector3<f32> directly, not sure I need/want this for now at least
+
+// Optionally, implement Deref to make accessing Vector3's methods more ergonomic.
+impl Deref for Colour {
+    type Target = Vector3<f32>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Colour {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+*/
