@@ -4,28 +4,68 @@ mod ray;
 
 use std::fs::File;
 use std::io::Write;
+use std::f32;
+
 use crate::colour::{Colour, write_colour};
 use crate::ray::Ray;
 
 // no need to write your own Vector3
 use nalgebra::{Point3, Vector3};
 
-fn hit_sphere(center: &Point3<f32>, radius: f32, ray: &Ray) -> bool{
+fn hit_sphere(center: &Point3<f32>, radius: f32, ray: &Ray) -> f32 {
     // solving quadraatic equation for ray-sphere intersection
     // # roots = # intersections
+
+    /* 
     let oc = center - ray.origin();
     let a = ray.direction().dot(&ray.direction());
     let b = -2.0 * oc.dot(&ray.direction());
     let c = oc.dot(&oc) - radius*radius;
     let discriminant = b*b - 4.0*a*c;
-    discriminant >= 0.0
+*/
+    let oc = ray.origin() - center;
+    let a = ray.direction().dot(&ray.direction());
+    let half_b = oc.dot(&ray.direction());
+    let c = oc.dot(&oc) - radius * radius;
+    let discriminant = half_b * half_b - a * c;
+
+    if discriminant < 0.0 {
+        return -1.0
+    }
+    else {
+        //return (-b - discriminant.sqrt()) / 2.0*a;
+        let sqrt_d = discriminant.sqrt();
+
+        // Try the "near" root first
+        let mut root = (-half_b - sqrt_d) / a;
+        if root < 0.0 {
+            // If it's behind the camera, try the other root
+            root = (-half_b + sqrt_d) / a;
+            if root < 0.0 {
+                return -1.0;
+            }
+        }
+        root
+    }
 
 }
 
 fn ray_colour(ray: &Ray) -> Colour {
     // Colour::new()
-    if hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5, ray) {
-        return Colour::new_from(1.0, 0.0, 0.0)
+
+    let t = hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5, ray);
+
+    if t > 0.0 {
+        let hit_pt = ray.at(t);
+
+        let sphere_center = Point3::new(0.0, 0.0, -1.0);
+
+        let unit_normal= (hit_pt - sphere_center).normalize();
+
+        let mapped = 0.5*(unit_normal + Vector3::new(1.0, 1.0, 1.0));
+
+        return Colour::new_from(mapped.x, mapped.y, mapped.z);
+        //return Colour::new_from(1.0, 0.0, 0.0)
     }
 
     let unit_direction = ray.direction().normalize();
