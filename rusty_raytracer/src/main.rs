@@ -10,8 +10,23 @@ use crate::ray::Ray;
 // no need to write your own Vector3
 use nalgebra::{Point3, Vector3};
 
+fn hit_sphere(center: &Point3<f32>, radius: f32, ray: &Ray) -> bool{
+    // solving quadraatic equation for ray-sphere intersection
+    // # roots = # intersections
+    let oc = center - ray.origin();
+    let a = ray.direction().dot(&ray.direction());
+    let b = -2.0 * oc.dot(&ray.direction());
+    let c = oc.dot(&oc) - radius*radius;
+    let discriminant = b*b - 4.0*a*c;
+    discriminant >= 0.0
+
+}
+
 fn ray_colour(ray: &Ray) -> Colour {
     // Colour::new()
+    if hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5, ray) {
+        return Colour::new_from(1.0, 0.0, 0.0)
+    }
 
     let unit_direction = ray.direction().normalize();
     let a = 0.5 * (unit_direction.y + 1.0);
