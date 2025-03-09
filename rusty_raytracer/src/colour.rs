@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::Write;
 
 // not a new struct, we want a Newtype pattern, essentially a wrapper for Vector3<f32>
-pub struct Colour(Vector3<f32>);
+pub struct Colour(pub Vector3<f32>);
 
 impl Colour {
     pub fn new() -> Self {
@@ -32,10 +32,6 @@ impl Colour {
 
 pub fn write_colour(mut file: &File, pixel_colour: Colour) -> Result<(), Box<dyn std::error::Error>> {
     // write one line of pixel data to file
-
-    // let r = pixel.colour.x;
-    // let g = pixel_colour.y;
-    // let b = pixel_colour.z;
 
     let ir = (255.999*pixel_colour.r()) as i32;
     let ig = (255.999*pixel_colour.g()) as i32;
