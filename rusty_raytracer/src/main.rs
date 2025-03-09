@@ -16,6 +16,19 @@ fn hit_sphere(center: &Point3<f32>, radius: f32, ray: &Ray) -> f32 {
     // solving quadraatic equation for ray-sphere intersection
     // # roots = # intersections
 
+    let oc = center - ray.origin();
+
+    let a = ray.direction().norm_squared();      
+    let h = ray.direction().dot(&oc);            // dot(direction, oc)
+    let c = oc.norm_squared() - radius * radius;
+    let discriminant = h * h - a * c;
+
+    if discriminant < 0.0 {
+        -1.0
+    } else {
+        (h - discriminant.sqrt()) / a
+    }
+
     /* 
     let oc = center - ray.origin();
     let a = ray.direction().dot(&ray.direction());
@@ -23,6 +36,7 @@ fn hit_sphere(center: &Point3<f32>, radius: f32, ray: &Ray) -> f32 {
     let c = oc.dot(&oc) - radius*radius;
     let discriminant = b*b - 4.0*a*c;
 */
+/*
     let oc = ray.origin() - center;
     let a = ray.direction().dot(&ray.direction());
     let half_b = oc.dot(&ray.direction());
@@ -47,6 +61,7 @@ fn hit_sphere(center: &Point3<f32>, radius: f32, ray: &Ray) -> f32 {
         }
         root
     }
+    */
 
 }
 
