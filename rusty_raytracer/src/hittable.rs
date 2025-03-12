@@ -1,11 +1,12 @@
 use crate::ray::Ray;
+use crate::interval::Interval;
 
 use nalgebra::{Point3, Vector3};
 
 pub trait Hittable {
     // a trait will be used as a sort of "parent class" for hittable objects
     
-    fn hit(&self, ray: &Ray, ray_tmin: f32, ray_tmax: f32) -> Option<HitRecord> {
+    fn hit(&self, ray: &Ray, ray_t: &Interval) -> Option<HitRecord> {
         None
     }
 }

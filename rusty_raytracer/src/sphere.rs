@@ -1,4 +1,5 @@
 use crate::hittable::{Hittable, HitRecord};
+use crate::interval::Interval;
 use crate::ray::Ray;
 use nalgebra::{Point3, Vector3};
 
@@ -7,20 +8,23 @@ pub struct Sphere {
     radius: f32,
 }
 
+impl Sphere {
+
+    pub fn new(center: Point3<f32>, radius: f32) -> Self {
+        Self {
+            center,
+            radius,
+        }
+    }
+}
+
 impl Hittable for Sphere {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+    fn hit(&self, ray: &Ray, ray_t: &Interval) -> Option<HitRecord> {
         // Compute the ray-sphere intersection here.
-        // This function would return Some(hit_record) if there's a valid intersection,
-        // or None if the ray misses.
-        // (Implementation based on the hit_sphere function from Chapter 6.)
-        // ...
 
-            // solving quadraatic equation for ray-sphere intersection
-        // # roots = # intersections
-        // change to return Option<f32>, so instead of -1 you can use None
-
-        let oc = self.center - ray.origin();
-        let a = ray.direction().norm_squared();      
+        let oc = ray.origin() - self.center;
+        let a = ray.direction().norm_squared(); 
+        // h = half_b     
         let h = ray.direction().dot(&oc);            // dot(direction, oc)
         let c = oc.norm_squared() - self.radius * self.radius;
 
@@ -32,11 +36,11 @@ impl Hittable for Sphere {
         
         let dis_sqrt = discriminant.sqrt();
 
-        let mut root = (h-dis_sqrt)/a;
+        let mut root = (-h-dis_sqrt)/a;
 
-        if (root <= t_min) | (t_max <= root) {
-            root = (h + dis_sqrt)/a;
-            if (root <= t_min) | (t_max <= root) {
+        if !ray_t.surrounds(root) {
+            root = (-h + dis_sqrt)/a;
+            if !ray_t.surrounds(root) {
                 return None
             }
         }

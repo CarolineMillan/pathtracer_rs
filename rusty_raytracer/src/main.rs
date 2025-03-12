@@ -4,10 +4,16 @@ mod ray;
 mod hittable;
 mod hittable_list;
 mod sphere;
+mod interval;
 
 use std::fs::File;
 use std::io::Write;
-use std::f32;
+use std::f32::{self, INFINITY};
+use std::f32::consts;
+use hittable::Hittable;
+use hittable_list::HittableList;
+use sphere::Sphere;
+use interval::Interval;
 
 use crate::colour::{Colour, write_colour};
 use crate::ray::Ray;
@@ -15,42 +21,19 @@ use crate::ray::Ray;
 // no need to write your own Vector3
 use nalgebra::{Point3, Vector3};
 
-fn hit_sphere(center: &Point3<f32>, radius: f32, ray: &Ray) -> Option<f32> {
-    // solving quadraatic equation for ray-sphere intersection
-    // # roots = # intersections
-    // change to return Option<f32>, so instead of -1 you can use None
-
-    let oc = center - ray.origin();
-    let a = ray.direction().norm_squared();      
-    let h = ray.direction().dot(&oc);            // dot(direction, oc)
-    let c = oc.norm_squared() - radius * radius;
-    let discriminant = h * h - a * c;
-
-    if discriminant < 0.0 {
-        None
-    } else {
-        Some((h - discriminant.sqrt()) / a)
-    }
+fn degrees_to_radians(degrees: f32) -> f32 {
+    degrees*consts::PI / 180.0
 }
 
-fn ray_colour(ray: &Ray) -> Colour {
-    // Colour::new()
+fn ray_colour(ray: &Ray, world: &HittableList) -> Colour {
+    let potential_hit = world.hit(ray, &Interval::new(0.001, f32::INFINITY));
 
-    let t = hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5, ray);
-
-    if t.is_some() {
-        let hit_pt = ray.at(t.unwrap());
-
-        let sphere_center = Point3::new(0.0, 0.0, -1.0);
-
-        let unit_normal= (hit_pt - sphere_center).normalize();
-
-        let mapped = 0.5*(unit_normal + Vector3::new(1.0, 1.0, 1.0));
-
+    if potential_hit.is_some() {
+        let mapped = 0.5*(potential_hit.unwrap().normal + Vector3::new(1.0, 1.0, 1.0));
         return Colour::new_from(mapped.x, mapped.y, mapped.z);
-        //return Colour::new_from(1.0, 0.0, 0.0)
     }
 
+    // else draw sky
     let unit_direction = ray.direction().normalize();
     let a = 0.5 * (unit_direction.y + 1.0);
     let ans = (1.0-a)*Colour::new_from(1.0, 1.0, 1.0).0 + a*Colour::new_from(0.5, 0.7, 1.0).0;
@@ -64,6 +47,17 @@ pub fn main() -> std::io::Result<()>{
     let image_width = 400.0;
     let mut image_height = image_width/aspect_ratio;
     if image_height < 1.0 {image_height = 1.0}
+
+    //World
+
+    let mut world = HittableList::new();
+
+    let sphere1 = Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5));
+    let sphere2 = Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0));
+
+    //tutorial uses "make_shared" here FIXME
+    world.add(sphere1);
+    world.add(sphere2);
 
     // Camera
     let focal_length = 1.0;
@@ -93,17 +87,12 @@ pub fn main() -> std::io::Result<()>{
     for j in 0..image_height as usize {
         println!("\rScanlines remaining: {} ", (image_height as usize)-j);
         for i in 0..image_width as usize {
-            //let r = (i as f32)/(image_width-1.0)as f32;
-            //let g = (j as f32)/(image_height-1.0) as f32;
-            //let b = 0.000;
-
-            //let pixel_colour = Colour::new_from(r,g,b);
 
             let pixel_center = pixel00_loc + (i as f32 * pixel_delta_u) + (j as f32* pixel_delta_v);
             let ray_direction = pixel_center - camera_center;
             let r = Ray::new_from(camera_center, ray_direction);
 
-            let pixel_colour = ray_colour(&r);
+            let pixel_colour = ray_colour(&r, &world);
 
             let _res = write_colour(&file, pixel_colour);
         }
