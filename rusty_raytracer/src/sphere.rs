@@ -1,7 +1,7 @@
 use crate::hittable::{Hittable, HitRecord};
 use crate::interval::Interval;
 use crate::ray::Ray;
-use nalgebra::{Point3, Vector3};
+use nalgebra::Point3;
 
 pub struct Sphere {
     center: Point3<f32>,

@@ -1,5 +1,4 @@
 use nalgebra::{Point3, Vector3};
-use crate::colour::Colour;
 
 pub struct Ray {
     origin: Point3<f32>,
@@ -7,12 +6,14 @@ pub struct Ray {
 }
 
 impl Ray {
+    /* 
     pub fn new() -> Self {
         Self {
             origin: Point3::origin(),
             direction: Vector3::zeros(),
         }
     }
+    */
 
     pub fn new_from(origin: Point3<f32>, direction: Vector3<f32>) -> Self {
         Self {
@@ -33,8 +34,10 @@ impl Ray {
         self.origin + t*self.direction
     }
 
+    /*
     pub fn ray_colour(&self) -> Colour {
         Colour::new()
     }
+    */
 }
 

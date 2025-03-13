@@ -2,6 +2,8 @@ use nalgebra::Vector3;
 use std::fs::File;
 use std::io::Write;
 
+use crate::interval::Interval;
+
 // not a new struct, we want a Newtype pattern, essentially a wrapper for Vector3<f32>
 pub struct Colour(pub Vector3<f32>);
 
@@ -33,13 +35,14 @@ impl Colour {
 pub fn write_colour(mut file: &File, pixel_colour: Colour) -> Result<(), Box<dyn std::error::Error>> {
     // write one line of pixel data to file
 
-    let ir = (255.999*pixel_colour.r()) as i32;
-    let ig = (255.999*pixel_colour.g()) as i32;
-    let ib = (255.999*pixel_colour.b()) as i32;
+    let intensity = Interval::new(0.000, 0.999);
+    let r_byte = (256.0*intensity.clamp(pixel_colour.r())) as i32;
+    let g_byte = (256.0*intensity.clamp(pixel_colour.g())) as i32;
+    let b_byte = (256.0*intensity.clamp(pixel_colour.b())) as i32;
 
-    let pixel_data = format!("{} {} {}\n", ir, ig, ib);
+    let pixel_data = format!("{} {} {}\n", r_byte, g_byte, b_byte);
     // performance note: if the project gets bigger, store pixel_data in a vector and print everything at the end
-    
+               
     // if I'm using as_bytes, I'm putting it into the wrong format initally
     // just put it in the right format to start with
     file.write_all(pixel_data.as_bytes())?;
