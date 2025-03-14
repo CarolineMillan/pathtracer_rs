@@ -52,17 +52,17 @@ fn random_vec3_within(min: f32, max: f32) -> Vector3<f32> {
     random_vec
 }
 
-fn random_unit_vector() -> Option<Vector3<f32>> {
+fn random_unit_vector() -> Vector3<f32> {
     // not sure abt 1e-160 bit
     loop {
         let p = random_vec3_within(-1.0, 1.0);
         let lensq = p.norm_squared();
-        if (1e-8 < lensq) && (lensq <= 1.0) {return Some(p/(lensq.sqrt()))}
+        if (1e-8 < lensq) && (lensq <= 1.0) {return p/(lensq.sqrt())}
     }
 }
 
 fn random_on_hemisphere(normal: &Vector3<f32>) -> Vector3<f32> {
-    let on_unit_sphere = random_unit_vector().expect("No random unit vector!");
+    let on_unit_sphere = random_unit_vector();//.expect("No random unit vector!");
     if normal.dot(&on_unit_sphere) > 0.0 {return on_unit_sphere} else {return -on_unit_sphere}
 }
 

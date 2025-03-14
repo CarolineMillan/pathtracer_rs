@@ -8,7 +8,7 @@ use std::io;
 use nalgebra::{Point3, Vector3};
 
 use crate::interval::Interval;
-use crate::{random_f32, random_on_hemisphere};
+use crate::{random_f32, random_on_hemisphere, random_unit_vector};
 use crate::{hittable::Hittable, hittable_list::HittableList, ray::Ray, colour::{write_colour, Colour}};
 
 pub struct Camera {
@@ -151,16 +151,17 @@ impl Camera {
 }
 
 fn ray_colour(ray: &Ray, depth: u32, world: &HittableList) -> Colour {
-    if depth <=0 {return Colour::new()};
+    if depth <= 0 {return Colour::new()};
     let potential_hit = world.hit(ray, &Interval::new(0.001, f32::INFINITY));
     if potential_hit.is_some() {
         let point = potential_hit.as_ref().unwrap().p;
-        let normal = potential_hit.as_ref().unwrap().clone().normal;
+        let normal = potential_hit.as_ref().unwrap().normal + random_unit_vector();
         let direction = random_on_hemisphere(&normal);
         let mut colour = ray_colour(&Ray::new_from(point, direction), depth-1,  world);
-        colour.0.x = 0.5*colour.r();
-        colour.0.y = 0.5*colour.g();
-        colour.0.z = 0.5*colour.b();
+        colour.0 *= 0.1;
+        //colour.0.x = 0.5*colour.r();
+        //colour.0.y = 0.5*colour.g();
+        //colour.0.z = 0.5*colour.b();
         return colour;
         //let mapped = 0.5*(potential_hit.unwrap().normal + Vector3::new(1.0, 1.0, 1.0));
         //return Colour::new_from(mapped.x, mapped.y, mapped.z);
