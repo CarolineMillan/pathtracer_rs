@@ -1,4 +1,5 @@
-use crate::ray::Ray;
+use crate::lambertian::Lambertian;
+use crate::{material::Material, ray::Ray};
 use crate::interval::Interval;
 
 use nalgebra::{Point3, Vector3};
@@ -11,10 +12,11 @@ pub trait Hittable {
     }
 }
 
-#[derive(Clone)]
+//#[derive(Clone)]
 pub struct HitRecord {
     pub p: Point3<f32>,
     pub normal: Vector3<f32>,
+    pub mat: Box<dyn Material>,
     pub t: f32,
     front_face: bool,
 }
@@ -27,16 +29,18 @@ impl HitRecord {
         Self {
             p: Point3::origin(),
             normal: Vector3::zeros(),
+            mat: Box::new(Lambertian::new()), //use default lambertian material
             t: 0.0,
             front_face: false, //FIXME
         }
     }
     
 
-    pub fn new_from(p: Point3<f32>, normal: Vector3<f32>, t: f32) -> Self {
+    pub fn new_from(p: Point3<f32>, normal: Vector3<f32>,mat: Box<dyn Material>, t: f32) -> Self {
         Self {
             p,
             normal,
+            mat,
             t,
             front_face: false, // FIXME
         }

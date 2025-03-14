@@ -6,8 +6,14 @@ mod hittable_list;
 mod sphere;
 mod interval;
 mod camera;
+mod material;
+mod lambertian;
+mod metal;
 
 use std::f32;
+use colour::Colour;
+use lambertian::Lambertian;
+use metal::Metal;
 use rand::{rng, Rng}; //random number generator
 
 use hittable_list::HittableList;
@@ -66,17 +72,36 @@ fn random_on_hemisphere(normal: &Vector3<f32>) -> Vector3<f32> {
     if normal.dot(&on_unit_sphere) > 0.0 {return on_unit_sphere} else {return -on_unit_sphere}
 }
 
+fn near_zero(vec: Vector3<f32>) -> bool {
+    // is the vector nearzero in all directions?
+    let s = 1e-8;
+    (f32::abs(vec.x) < s) && (f32::abs(vec.y) < s) && (f32::abs(vec.z) < s)
+}
+
+fn reflect(v: &Vector3<f32>, n: &Vector3<f32>) -> Vector3<f32> {
+    v - 2.0*v.dot(n)*n
+}
+
 pub fn main() -> std::io::Result<()>{
 
     //World
     let mut world = HittableList::new();
 
-    let sphere1 = Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5));
-    let sphere2 = Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0));
+    let material_ground = Box::new(Lambertian::new_from(Colour::new_from(0.8, 0.8, 0.0)));
+    let material_center = Box::new(Lambertian::new_from(Colour::new_from(0.1, 0.2, 0.5)));
+    let material_left = Box::new(Metal::new_from(Colour::new_from(0.8, 0.8, 0.8)));
+    let material_right = Box::new(Metal::new_from(Colour::new_from(0.8, 0.6, 0.2)));
+
+    let sphere1 = Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, material_ground));
+    let sphere2 = Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.2), 0.5, material_center));
+    let sphere3 = Box::new(Sphere::new(Point3::new(-1.0, 0.0, -1.0), 0.5, material_left));
+    let sphere4 = Box::new(Sphere::new(Point3::new(1.0, 0.0, -1.0), 0.5, material_right));
 
     //tutorial uses "make_shared" here FIXME
     world.add(sphere1);
     world.add(sphere2);
+    world.add(sphere3);
+    world.add(sphere4);
 
     let mut cam = Camera::new();
 
