@@ -13,32 +13,32 @@ pub trait Hittable {
 
 #[derive(Clone)]
 pub struct HitRecord {
-    pub _p: Point3<f32>,
+    pub p: Point3<f32>,
     pub normal: Vector3<f32>,
     pub t: f32,
-    _front_face: bool,
+    front_face: bool,
 }
 
 impl HitRecord {
 
     // rename to default?
-    /*
+    
     pub fn new() -> Self {
         Self {
-            _p: Point3::origin(),
+            p: Point3::origin(),
             normal: Vector3::zeros(),
             t: 0.0,
-            _front_face: false, //FIXME
+            front_face: false, //FIXME
         }
     }
-    */
+    
 
     pub fn new_from(p: Point3<f32>, normal: Vector3<f32>, t: f32) -> Self {
         Self {
-            _p: p,
+            p,
             normal,
             t,
-            _front_face: false, // FIXME
+            front_face: false, // FIXME
         }
     }
 

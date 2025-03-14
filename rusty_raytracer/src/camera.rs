@@ -8,13 +8,14 @@ use std::io;
 use nalgebra::{Point3, Vector3};
 
 use crate::interval::Interval;
-use crate::random_f32;
+use crate::{random_f32, random_on_hemisphere};
 use crate::{hittable::Hittable, hittable_list::HittableList, ray::Ray, colour::{write_colour, Colour}};
 
 pub struct Camera {
     pub aspect_ratio: f32,
     pub image_width: f32,
     pub samples_per_pixel: u32,
+    pub max_depth: u32,
     image_height: f32,
     pixel_samples_scale: f32,
     center: Point3<f32>,
@@ -27,9 +28,10 @@ pub struct Camera {
 impl Camera {
     pub fn new() -> Self {
         Self {
-            aspect_ratio: 0.0,
-            image_width: 0.0,
-            samples_per_pixel: 0,
+            aspect_ratio: 1.0,
+            image_width: 100.0,
+            samples_per_pixel: 10,
+            max_depth: 10,
             image_height: 0.0,
             pixel_samples_scale: 0.0,
             center: Point3::origin(),
@@ -136,7 +138,7 @@ impl Camera {
                 let mut pixel_colour = Colour::new();
                 for _sample in 0..self.samples_per_pixel {
                     let r = self.get_ray(i, j);
-                    pixel_colour.0 += ray_colour(&r, &world).0;
+                    pixel_colour.0 += ray_colour(&r, self.max_depth, &world).0;
                 }
                 pixel_colour.0 *= self.pixel_samples_scale;
 
@@ -148,11 +150,20 @@ impl Camera {
     }
 }
 
-fn ray_colour(ray: &Ray, world: &HittableList) -> Colour {
+fn ray_colour(ray: &Ray, depth: u32, world: &HittableList) -> Colour {
+    if depth <=0 {return Colour::new()};
     let potential_hit = world.hit(ray, &Interval::new(0.001, f32::INFINITY));
     if potential_hit.is_some() {
-        let mapped = 0.5*(potential_hit.unwrap().normal + Vector3::new(1.0, 1.0, 1.0));
-        return Colour::new_from(mapped.x, mapped.y, mapped.z);
+        let point = potential_hit.as_ref().unwrap().p;
+        let normal = potential_hit.as_ref().unwrap().clone().normal;
+        let direction = random_on_hemisphere(&normal);
+        let mut colour = ray_colour(&Ray::new_from(point, direction), depth-1,  world);
+        colour.0.x = 0.5*colour.r();
+        colour.0.y = 0.5*colour.g();
+        colour.0.z = 0.5*colour.b();
+        return colour;
+        //let mapped = 0.5*(potential_hit.unwrap().normal + Vector3::new(1.0, 1.0, 1.0));
+        //return Colour::new_from(mapped.x, mapped.y, mapped.z);
     }
 
     // else draw sky
