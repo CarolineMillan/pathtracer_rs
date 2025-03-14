@@ -89,8 +89,8 @@ pub fn main() -> std::io::Result<()>{
 
     let material_ground = Box::new(Lambertian::new_from(Colour::new_from(0.8, 0.8, 0.0)));
     let material_center = Box::new(Lambertian::new_from(Colour::new_from(0.1, 0.2, 0.5)));
-    let material_left = Box::new(Metal::new_from(Colour::new_from(0.8, 0.8, 0.8)));
-    let material_right = Box::new(Metal::new_from(Colour::new_from(0.8, 0.6, 0.2)));
+    let material_left = Box::new(Metal::new_from(Colour::new_from(0.8, 0.8, 0.8), 0.3));
+    let material_right = Box::new(Metal::new_from(Colour::new_from(0.8, 0.6, 0.2), 1.0));
 
     let sphere1 = Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, material_ground));
     let sphere2 = Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.2), 0.5, material_center));
