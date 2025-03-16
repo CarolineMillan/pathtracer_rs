@@ -1,4 +1,3 @@
-
 mod colour;
 mod ray;
 mod hittable;
@@ -15,6 +14,7 @@ use std::f32;
 use colour::Colour;
 use dielectric::Dielectric;
 use lambertian::Lambertian;
+use material::Material;
 use metal::Metal;
 use rand::{rng, Rng}; //random number generator
 
@@ -59,11 +59,6 @@ fn random_vec3_within(min: f32, max: f32) -> Vector3<f32> {
     random_vec
 }
 
-fn unit_vector(v: Vector3<f32>) -> Vector3<f32> {
-    let lensq = v.norm_squared();
-    v/(lensq.sqrt())
-}
-
 fn random_unit_vector() -> Vector3<f32> {
     // not sure abt 1e-160 bit
     loop {
@@ -72,12 +67,12 @@ fn random_unit_vector() -> Vector3<f32> {
         if (1e-8 < lensq) && (lensq <= 1.0) {return p.normalize()}
     }
 }
-
+/*
 fn random_on_hemisphere(normal: &Vector3<f32>) -> Vector3<f32> {
-    let on_unit_sphere = random_unit_vector();//.expect("No random unit vector!");
+    let on_unit_sphere = random_unit_vector();
     if normal.dot(&on_unit_sphere) > 0.0 {return on_unit_sphere} else {return -on_unit_sphere}
 }
-
+*/
 fn near_zero(vec: Vector3<f32>) -> bool {
     // is the vector nearzero in all directions?
     let s = 1e-8;
@@ -94,6 +89,88 @@ fn refract(uv: &Vector3<f32>, n: &Vector3<f32>, etai_over_etat: f32) -> Vector3<
     let r_out_parallel = -((1.0 - r_out_perp.norm_squared()).abs()).sqrt() * n;
     r_out_perp + r_out_parallel
 }
+
+fn random_in_unit_disk() -> Vector3<f32> {
+    loop {
+        let p = Vector3::new(random_f32_within(-1.0, 1.0), random_f32_within(-1.0, 1.0), 0.0);
+        if p.norm_squared() < 1.0 {return p}
+    }   
+}
+
+pub fn main() -> std::io::Result<()>{
+
+    //World
+    let mut world = HittableList::new();
+
+    let ground_material = Box::new(Lambertian::new_from(Colour::new_from(0.5, 0.5, 0.5)));
+    world.add(Box::new(Sphere::new(Point3::new(0.0,-1000.0,0.0), 1000.0, ground_material)));
+    
+    for a in -11..11 {
+        for b in -11..11 {
+            let choose_mat = random_f32();
+            let center = Point3::new((a as f32)+0.9*random_f32(), 0.2, (b as f32)+0.9*random_f32());
+
+            if (center - Point3::new(4.0, 0.2, 0.0)).len() as f32 > 0.9 {
+
+                let sphere_material: Box<dyn Material>;
+
+                if choose_mat < 0.8 {
+                    //diffuse
+                    let col_vec1 = random_vec3();
+                    let col_vec2 = random_vec3();
+                    let alb_col = Vector3::new(col_vec1[0]*col_vec2[0], col_vec1[1]*col_vec2[1], col_vec1[2]*col_vec2[2]);
+                    let albedo = Colour::new_from(alb_col[0], alb_col[1], alb_col[2]);
+                    sphere_material = Box::new(Lambertian::new_from(albedo));
+                    world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
+                }
+                else if choose_mat < 0.95 {
+                    //metal
+                    let col_vec = random_vec3_within(0.5, 1.0);
+                    let albedo = Colour::new_from(col_vec[0], col_vec[1], col_vec[2]);
+                    let fuzz = random_f32_within(0.0, 0.5);
+                    sphere_material = Box::new(Metal::new_from(albedo, fuzz));
+                    world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
+                }
+                else {
+                    //glass
+                    sphere_material = Box::new(Dielectric::new_from(1.5));
+                    world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
+                }
+            }
+        }
+    }
+
+    let material1 = Box::new(Dielectric::new_from(1.5));
+    world.add(Box::new(Sphere::new(Point3::new(0.0, 1.0, 0.0), 1.0, material1)));
+
+    let material2 = Box::new(Lambertian::new_from(Colour::new_from(0.4, 0.2, 0.1)));
+    world.add(Box::new(Sphere::new(Point3::new(-4.0, 1.0, 0.0), 1.0, material2)));
+
+    let material3 = Box::new(Metal::new_from(Colour::new_from(0.7, 0.6, 0.5), 0.0));
+    world.add(Box::new(Sphere::new(Point3::new(4.0, 1.0, 0.0), 1.0, material3)));
+
+
+    let mut cam = Camera::new();
+
+    cam.aspect_ratio      = 16.0 / 9.0;
+    cam.image_width       = 1200.0;
+    cam.samples_per_pixel = 500;
+    cam.max_depth         = 50;
+
+    cam.vfov     = 20;
+    cam.lookfrom = Point3::new(13.0,2.0,3.0);
+    cam.lookat   = Point3::new(0.0,0.0,0.0);
+    cam.vup      = Vector3::new(0.0,1.0,0.0);
+
+    cam.defocus_angle = 0.6;
+    cam.focus_dist    = 10.0;
+
+    let _ = cam.render(&world);
+
+    Ok(())
+}
+
+/*
 
 pub fn main() -> std::io::Result<()>{
 
@@ -148,7 +225,12 @@ pub fn main() -> std::io::Result<()>{
     cam.lookat = Point3::new(0.0, 0.0, -1.0);
     cam.vup = Vector3::new(0.0, 1.0, 0.0);
 
+    cam.defocus_angle = 10.0;
+    cam.focus_dist = 3.4;
+
     let _ = cam.render(&world);
 
     Ok(())
 }
+
+*/

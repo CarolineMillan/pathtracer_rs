@@ -8,7 +8,7 @@ use std::io;
 use nalgebra::{Point3, Vector3};
 
 use crate::interval::Interval;
-use crate::{degrees_to_radians, random_f32, unit_vector};
+use crate::{degrees_to_radians, random_f32, random_in_unit_disk};
 use crate::{hittable::Hittable, hittable_list::HittableList, ray::Ray, colour::{write_colour, Colour}};
 
 pub struct Camera {
@@ -20,6 +20,8 @@ pub struct Camera {
     pub lookfrom: Point3<f32>,
     pub lookat: Point3<f32>,
     pub vup: Vector3<f32>,
+    pub defocus_angle: f32,
+    pub focus_dist: f32,
     image_height: f32,
     pixel_samples_scale: f32,
     center: Point3<f32>,
@@ -29,6 +31,8 @@ pub struct Camera {
     u: Vector3<f32>,
     v: Vector3<f32>,
     w: Vector3<f32>,
+    defocus_disk_u: Vector3<f32>,
+    defocus_disk_v: Vector3<f32>,
 }
 
 impl Camera {
@@ -42,6 +46,8 @@ impl Camera {
             lookfrom: Point3::origin(),
             lookat: Point3::new(0.0, 0.0, -1.0),
             vup: Vector3::new(0.0, 1.0, 0.0),
+            defocus_angle: 0.0,
+            focus_dist: 10.0,
             image_height: 0.0,
             pixel_samples_scale: 0.0,
             center: Point3::origin(),
@@ -51,6 +57,8 @@ impl Camera {
             u: Vector3::zeros(),
             v: Vector3::zeros(),
             w: Vector3::zeros(),
+            defocus_disk_u: Vector3::zeros(),
+            defocus_disk_v: Vector3::zeros(),
         }
     }
     pub fn initialise(&mut self) {
@@ -59,17 +67,16 @@ impl Camera {
         if self.image_height < 1.0 {
             self.image_height = 1.0;
         }
-        //self.samples_per_pixel = 10;
+        
         if self.samples_per_pixel == 0 {self.samples_per_pixel = 100}
         self.pixel_samples_scale = 1.0/(self.samples_per_pixel as f32);
     
-        self.center = self.lookfrom; //Point3::new(0.0, 0.0, 0.0);
-    
+        self.center = self.lookfrom; 
+
         // Camera setup
-        let focal_length = (self.lookfrom - self.lookat).norm();//1.0;
         let theta = degrees_to_radians(self.vfov as f32);
         let h = (theta/2.0).tan();
-        let viewport_height = 2.0*h*focal_length;
+        let viewport_height = 2.0*h*self.focus_dist;
         let viewport_width = viewport_height * (self.image_width / self.image_height);
     
         // basis vecs for camera coord frame
@@ -95,12 +102,15 @@ impl Camera {
     
         // Upper-left pixel location
         let viewport_upper_left = self.center
-            - (focal_length*self.w)
+            - (self.focus_dist*self.w)
             - viewport_u / 2.0
             - viewport_v / 2.0;
     
         self.pixel00_loc = viewport_upper_left + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
     
+        let defocus_radius = self.focus_dist * (degrees_to_radians(self.defocus_angle/2.0)).tan();
+        self.defocus_disk_u = self.u*defocus_radius;
+        self.defocus_disk_v = self.v*defocus_radius;
         // Double-check deltas
         println!("Pixel deltas: u = {:?}, v = {:?}", self.pixel_delta_u, self.pixel_delta_v);
     }
@@ -140,7 +150,7 @@ impl Camera {
                             + ((i as f32 + offset.x) * self.pixel_delta_u)
                             + ((j as f32 + offset.y) * self.pixel_delta_v);
         
-        let ray_origin = self.center;
+        let ray_origin = if self.defocus_angle <= 0.0 {self.center} else {self.defocus_disk_sample()};
         let ray_direction = pixel_sample - ray_origin;
 
         Ray::new_from(ray_origin, ray_direction)
@@ -172,6 +182,10 @@ impl Camera {
         println!("\rDone.               \n");
         Ok(())
     }
+    fn defocus_disk_sample(&self) -> Point3<f32> {
+        let p = random_in_unit_disk();
+        return self.center + (p[0]*self.defocus_disk_u) + (p[1]*self.defocus_disk_v);
+    }
 }
 
 fn ray_colour(ray: &Ray, depth: u32, world: &HittableList) -> Colour {
@@ -179,9 +193,7 @@ fn ray_colour(ray: &Ray, depth: u32, world: &HittableList) -> Colour {
     
     if let Some(hit_rec) = world.hit(ray, &Interval::new(0.001, f32::INFINITY)) {
         //set face normal
-        //let norm = hit_rec.normal.clone();
-        //hit_rec.set_face_normal(ray, &norm);
-        if let Some((attenuation, scattered)) = hit_rec.mat.scatter(&ray, &hit_rec) { //}, &attenuation, &scattered){
+        if let Some((attenuation, scattered)) = hit_rec.mat.scatter(&ray, &hit_rec) { 
             let r_col = ray_colour(&scattered, depth-1, &world);
             
             return Colour::new_from(attenuation.r()*r_col.r(), attenuation.g()*r_col.g(), attenuation.b()*r_col.b())
@@ -199,3 +211,4 @@ fn ray_colour(ray: &Ray, depth: u32, world: &HittableList) -> Colour {
 fn sample_square() -> Vector3<f32> {
     Vector3::new(random_f32() - 0.5, random_f32() - 0.5, 0.0)
 }
+
