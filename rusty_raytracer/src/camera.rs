@@ -153,7 +153,10 @@ impl Camera {
 fn ray_colour(ray: &Ray, depth: u32, world: &HittableList) -> Colour {
     if depth <= 0 {return Colour::new()};
     
-    if let Some(hit_rec) = world.hit(ray, &Interval::new(0.001, f32::INFINITY)) {
+    if let Some(mut hit_rec) = world.hit(ray, &Interval::new(0.001, f32::INFINITY)) {
+        //set face normal
+        //let norm = hit_rec.normal.clone();
+        //hit_rec.set_face_normal(ray, &norm);
         if let Some((attenuation, scattered)) = hit_rec.mat.scatter(&ray, &hit_rec) { //}, &attenuation, &scattered){
             let r_col = ray_colour(&scattered, depth-1, &world);
             

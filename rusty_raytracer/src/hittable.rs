@@ -18,7 +18,7 @@ pub struct HitRecord {
     pub normal: Vector3<f32>,
     pub mat: Box<dyn Material>,
     pub t: f32,
-    front_face: bool,
+    pub front_face: bool,
 }
 
 impl HitRecord {
@@ -49,9 +49,14 @@ impl HitRecord {
     pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: &Vector3<f32>) {
         // set normal vector
 
-        let front_face = ray.direction().dot(&outward_normal) < 0.0;
-        self.normal = if front_face {outward_normal.clone()} 
-        else {-outward_normal};
+        //println!("in set face normal");
+
+        self.front_face = ray.direction().dot(&outward_normal) < 0.0;
+        if self.front_face {
+            //println!("front_face is true");
+            self.normal = outward_normal.clone()
+        } 
+        else {self.normal = -outward_normal};
 
     }
 }
