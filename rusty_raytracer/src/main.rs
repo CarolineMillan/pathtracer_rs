@@ -24,11 +24,10 @@ use camera::Camera;
 
 // no need to write your own Vector3
 use nalgebra::{Point3, Vector3};
-/* 
+
 fn degrees_to_radians(degrees: f32) -> f32 {
-    degrees*consts::PI / 180.0
+    degrees*f32::consts::PI / 180.0
 }
-    */
 
 fn random_f32() -> f32 {
     let mut rng = rng();
@@ -60,12 +59,17 @@ fn random_vec3_within(min: f32, max: f32) -> Vector3<f32> {
     random_vec
 }
 
+fn unit_vector(v: Vector3<f32>) -> Vector3<f32> {
+    let lensq = v.norm_squared();
+    v/(lensq.sqrt())
+}
+
 fn random_unit_vector() -> Vector3<f32> {
     // not sure abt 1e-160 bit
     loop {
         let p = random_vec3_within(-1.0, 1.0);
         let lensq = p.norm_squared();
-        if (1e-8 < lensq) && (lensq <= 1.0) {return p/(lensq.sqrt())}
+        if (1e-8 < lensq) && (lensq <= 1.0) {return p.normalize()}
     }
 }
 
@@ -77,7 +81,7 @@ fn random_on_hemisphere(normal: &Vector3<f32>) -> Vector3<f32> {
 fn near_zero(vec: Vector3<f32>) -> bool {
     // is the vector nearzero in all directions?
     let s = 1e-8;
-    (f32::abs(vec.x) < s) && (f32::abs(vec.y) < s) && (f32::abs(vec.z) < s)
+    (vec.x.abs() < s) && (vec.y.abs() < s) && (vec.z.abs() < s)
 }
 
 fn reflect(v: &Vector3<f32>, n: &Vector3<f32>) -> Vector3<f32> {
@@ -87,7 +91,7 @@ fn reflect(v: &Vector3<f32>, n: &Vector3<f32>) -> Vector3<f32> {
 fn refract(uv: &Vector3<f32>, n: &Vector3<f32>, etai_over_etat: f32) -> Vector3<f32> {
     let cos_theta = f32::min(-uv.dot(n), 1.0);
     let r_out_perp = etai_over_etat * (uv + cos_theta*n);
-    let r_out_parallel = -(f32::abs(1.0 - r_out_perp.norm_squared())).sqrt() * n;
+    let r_out_parallel = -((1.0 - r_out_perp.norm_squared()).abs()).sqrt() * n;
     r_out_perp + r_out_parallel
 }
 
@@ -95,6 +99,8 @@ pub fn main() -> std::io::Result<()>{
 
     //World
     let mut world = HittableList::new();
+
+    
 
     let material_ground = Box::new(Lambertian::new_from(Colour::new_from(0.8, 0.8, 0.0)));
     let material_center = Box::new(Lambertian::new_from(Colour::new_from(0.1, 0.2, 0.5)));
@@ -115,12 +121,32 @@ pub fn main() -> std::io::Result<()>{
     world.add(sphere4);
     world.add(sphere5);
 
+    
+    /*
+    let r = (f32::consts::PI/4.0).cos();
+
+    let material_left = Box::new(Lambertian::new_from(Colour::new_from(0.0, 0.0, 1.0)));
+    let material_right = Box::new(Lambertian::new_from(Colour::new_from(1.0, 0.0, 0.0)));
+
+    let sphere1 = Box::new(Sphere::new(Point3::new(-r, 0.0, -1.0), r, material_left));
+    let sphere2 = Box::new(Sphere::new(Point3::new(r, 0.0, -1.0), r, material_right));
+  
+    world.add(sphere1);
+    world.add(sphere2);
+    */
+
+
     let mut cam = Camera::new();
 
     cam.aspect_ratio = 16.0/9.0;
     cam.image_width = 400.0;
     cam.samples_per_pixel = 100;
     cam.max_depth = 50;
+
+    cam.vfov = 20;
+    cam.lookfrom = Point3::new(-2.0, 2.0, 1.0);
+    cam.lookat = Point3::new(0.0, 0.0, -1.0);
+    cam.vup = Vector3::new(0.0, 1.0, 0.0);
 
     let _ = cam.render(&world);
 

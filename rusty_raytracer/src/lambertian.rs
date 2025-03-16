@@ -23,7 +23,7 @@ impl Material for Lambertian {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Colour, Ray)> {
         let mut scatter_direction = rec.normal + random_unit_vector();
         
-        if near_zero(scatter_direction) {scatter_direction = rec.normal}
+        if near_zero(scatter_direction) {scatter_direction = rec.normal}// + random_unit_vector()}
         
         let scattered = Ray::new_from(rec.p, scatter_direction);
         let attenuation = self.albedo.clone();

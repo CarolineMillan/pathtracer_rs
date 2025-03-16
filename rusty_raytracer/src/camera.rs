@@ -8,7 +8,7 @@ use std::io;
 use nalgebra::{Point3, Vector3};
 
 use crate::interval::Interval;
-use crate::random_f32;
+use crate::{degrees_to_radians, random_f32, unit_vector};
 use crate::{hittable::Hittable, hittable_list::HittableList, ray::Ray, colour::{write_colour, Colour}};
 
 pub struct Camera {
@@ -16,13 +16,19 @@ pub struct Camera {
     pub image_width: f32,
     pub samples_per_pixel: u32,
     pub max_depth: u32,
+    pub vfov: u32,
+    pub lookfrom: Point3<f32>,
+    pub lookat: Point3<f32>,
+    pub vup: Vector3<f32>,
     image_height: f32,
     pixel_samples_scale: f32,
     center: Point3<f32>,
     pixel00_loc: Point3<f32>,
     pixel_delta_u: Vector3<f32>,
     pixel_delta_v: Vector3<f32>,
-
+    u: Vector3<f32>,
+    v: Vector3<f32>,
+    w: Vector3<f32>,
 }
 
 impl Camera {
@@ -32,12 +38,19 @@ impl Camera {
             image_width: 100.0,
             samples_per_pixel: 10,
             max_depth: 10,
+            vfov: 90,
+            lookfrom: Point3::origin(),
+            lookat: Point3::new(0.0, 0.0, -1.0),
+            vup: Vector3::new(0.0, 1.0, 0.0),
             image_height: 0.0,
             pixel_samples_scale: 0.0,
             center: Point3::origin(),
             pixel00_loc: Point3::origin(),
             pixel_delta_u: Vector3::zeros(),
             pixel_delta_v: Vector3::zeros(),
+            u: Vector3::zeros(),
+            v: Vector3::zeros(),
+            w: Vector3::zeros(),
         }
     }
     pub fn initialise(&mut self) {
@@ -50,20 +63,31 @@ impl Camera {
         if self.samples_per_pixel == 0 {self.samples_per_pixel = 100}
         self.pixel_samples_scale = 1.0/(self.samples_per_pixel as f32);
     
-        self.center = Point3::new(0.0, 0.0, 0.0);
+        self.center = self.lookfrom; //Point3::new(0.0, 0.0, 0.0);
     
         // Camera setup
-        let focal_length = 1.0;
-        let viewport_height = 2.0;
+        let focal_length = (self.lookfrom - self.lookat).norm();//1.0;
+        let theta = degrees_to_radians(self.vfov as f32);
+        let h = (theta/2.0).tan();
+        let viewport_height = 2.0*h*focal_length;
         let viewport_width = viewport_height * (self.image_width / self.image_height);
     
+        // basis vecs for camera coord frame
+        self.w = (self.lookfrom - self.lookat).normalize();
+        self.u = (self.vup.cross(&self.w)).normalize();
+        self.v = self.w.cross(&self.u);
+
         // Ensure viewport sizes are sensible
         println!("Viewport width: {}", viewport_width);
         println!("Viewport height: {}", viewport_height);
+        println!("lookfrom: {}", self.lookfrom);
+        println!("lookat: {}", self.lookat);
+        println!("vfov: {}", self.vfov);
+        println!("aspect_ratio: {}", self.aspect_ratio);
     
         // Vectors along viewport edges
-        let viewport_u = Vector3::new(viewport_width, 0.0, 0.0);
-        let viewport_v = Vector3::new(0.0, -viewport_height, 0.0);
+        let viewport_u = viewport_width*self.u;
+        let viewport_v = viewport_height*-self.v;
     
         // Pixel deltas
         self.pixel_delta_u = viewport_u / self.image_width;
@@ -71,7 +95,7 @@ impl Camera {
     
         // Upper-left pixel location
         let viewport_upper_left = self.center
-            - Vector3::new(0.0, 0.0, focal_length)
+            - (focal_length*self.w)
             - viewport_u / 2.0
             - viewport_v / 2.0;
     
@@ -153,7 +177,7 @@ impl Camera {
 fn ray_colour(ray: &Ray, depth: u32, world: &HittableList) -> Colour {
     if depth <= 0 {return Colour::new()};
     
-    if let Some(mut hit_rec) = world.hit(ray, &Interval::new(0.001, f32::INFINITY)) {
+    if let Some(hit_rec) = world.hit(ray, &Interval::new(0.001, f32::INFINITY)) {
         //set face normal
         //let norm = hit_rec.normal.clone();
         //hit_rec.set_face_normal(ray, &norm);
