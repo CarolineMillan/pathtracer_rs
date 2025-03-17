@@ -155,9 +155,9 @@ pub fn main() -> std::io::Result<()>{
     let mut cam = Camera::new();
 
     cam.aspect_ratio      = 16.0 / 9.0;
-    cam.image_width       = 400.0;
+    cam.image_width       = 1200.0;
     cam.samples_per_pixel = 100;
-    cam.max_depth         = 25;
+    cam.max_depth         = 50;
 
     cam.vfov     = 20;
     cam.lookfrom = Point3::new(13.0,2.0,3.0);
