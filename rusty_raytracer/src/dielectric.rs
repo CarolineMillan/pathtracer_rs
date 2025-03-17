@@ -49,7 +49,7 @@ impl Material for Dielectric {
 
         Some((attenuation, scattered))
     }
-    fn clone_box(&self) -> Box<dyn Material> {
+    fn clone_box(&self) -> Box<dyn Material + Send + Sync> {
         Box::new(self.clone())
     }
 }

@@ -17,7 +17,7 @@ use lambertian::Lambertian;
 use material::Material;
 use metal::Metal;
 use rand::{rng, Rng}; //random number generator
-
+use std::sync::Arc;
 use hittable_list::HittableList;
 use sphere::Sphere;
 use camera::Camera;
@@ -149,13 +149,15 @@ pub fn main() -> std::io::Result<()>{
     let material3 = Box::new(Metal::new_from(Colour::new_from(0.7, 0.6, 0.5), 0.0));
     world.add(Box::new(Sphere::new(Point3::new(4.0, 1.0, 0.0), 1.0, material3)));
 
+    let sync_world = Arc::new(&world);
+
 
     let mut cam = Camera::new();
 
     cam.aspect_ratio      = 16.0 / 9.0;
-    cam.image_width       = 1200.0;
-    cam.samples_per_pixel = 500;
-    cam.max_depth         = 50;
+    cam.image_width       = 400.0;
+    cam.samples_per_pixel = 100;
+    cam.max_depth         = 25;
 
     cam.vfov     = 20;
     cam.lookfrom = Point3::new(13.0,2.0,3.0);
@@ -165,7 +167,7 @@ pub fn main() -> std::io::Result<()>{
     cam.defocus_angle = 0.6;
     cam.focus_dist    = 10.0;
 
-    let _ = cam.render(&world);
+    let _ = cam.render(&sync_world);
 
     Ok(())
 }

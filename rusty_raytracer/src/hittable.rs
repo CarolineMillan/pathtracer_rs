@@ -4,7 +4,7 @@ use crate::interval::Interval;
 
 use nalgebra::{Point3, Vector3};
 
-pub trait Hittable {
+pub trait Hittable: Send + Sync {
     // a trait will be used as a sort of "parent class" for hittable objects
     
     fn hit(&self, _ray: &Ray, _ray_t: &Interval) -> Option<HitRecord> {

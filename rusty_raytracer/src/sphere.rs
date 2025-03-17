@@ -8,7 +8,7 @@ use nalgebra::Point3;
 pub struct Sphere {
     center: Point3<f32>,
     radius: f32,
-    mat: Box<dyn Material>,
+    mat: Box<dyn Material + Send + Sync>,
 }
 
 impl Sphere {

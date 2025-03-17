@@ -5,8 +5,13 @@
 use std::io::Write;
 use std::fs::File;
 use std::io;
+use std::sync::Arc;
 use nalgebra::{Point3, Vector3};
+use rayon::prelude::*;
+use rayon::iter::IntoParallelIterator;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
+use crate::colour::write_colour_string;
 use crate::interval::Interval;
 use crate::{degrees_to_radians, random_f32, random_in_unit_disk};
 use crate::{hittable::Hittable, hittable_list::HittableList, ray::Ray, colour::{write_colour, Colour}};
@@ -156,7 +161,7 @@ impl Camera {
         Ray::new_from(ray_origin, ray_direction)
     }
 
-    pub fn render(&mut self, world: &HittableList) -> io::Result<()> {
+    pub fn render(&mut self, world: &Arc<&HittableList>) -> io::Result<()> {
 
         self.initialise();
         // render
@@ -165,8 +170,38 @@ impl Camera {
         let header = format!("P3\n{} {}\n255\n", self.image_width, self.image_height);
     
         file.write_all(header.as_bytes())?;
-    
-        for j in 0..self.image_height as usize {
+
+        let progress = Arc::new(AtomicUsize::new(0)); // Shared progress counter
+
+        let rendered_rows: Vec<String> = (0..self.image_height as usize)
+            .into_par_iter() // Parallelize the outer loop
+            .map(|j| {
+                let mut row = String::new();
+                let my_world = Arc::clone(&world);
+                for i in 0..self.image_width as usize {
+                    let mut pixel_colour = Colour::new();
+                    for _ in 0..self.samples_per_pixel {
+                        let r = self.get_ray(i, j);
+                        pixel_colour.0 += ray_colour(&r, self.max_depth, &my_world).0;
+                    }
+                    pixel_colour.0 *= self.pixel_samples_scale;
+                    row.push_str(&format!("{}\n", write_colour_string(pixel_colour)));
+                }
+                let completed = progress.fetch_add(1, Ordering::Relaxed) + 1;
+                if completed % 1 == 0 || completed == self.image_height as usize {
+                    println!("Progress: {}/{}", completed, self.image_height);
+                }
+                row
+            })
+            .collect();
+
+        // Write the computed rows to the file sequentially
+        for row in rendered_rows {
+            write!(file, "{}", row).unwrap();
+        }
+
+        /*
+        for j in (0..self.image_height as usize).into_par_iter() {
             println!("\rScanlines remaining: {} ", (self.image_height as usize)-j);
             for i in 0..self.image_width as usize {
                 let mut pixel_colour = Colour::new();
@@ -179,6 +214,8 @@ impl Camera {
                 let _res = write_colour(&file, pixel_colour);
             }
         }
+
+*/
         println!("\rDone.               \n");
         Ok(())
     }
@@ -188,13 +225,15 @@ impl Camera {
     }
 }
 
-fn ray_colour(ray: &Ray, depth: u32, world: &HittableList) -> Colour {
+fn ray_colour(ray: &Ray, depth: u32, world: &Arc<&HittableList>) -> Colour {
     if depth <= 0 {return Colour::new()};
+
+    let my_world = Arc::clone(&world);
     
-    if let Some(hit_rec) = world.hit(ray, &Interval::new(0.001, f32::INFINITY)) {
+    if let Some(hit_rec) = my_world.hit(ray, &Interval::new(0.001, f32::INFINITY)) {
         //set face normal
         if let Some((attenuation, scattered)) = hit_rec.mat.scatter(&ray, &hit_rec) { 
-            let r_col = ray_colour(&scattered, depth-1, &world);
+            let r_col = ray_colour(&scattered, depth-1, &my_world);
             
             return Colour::new_from(attenuation.r()*r_col.r(), attenuation.g()*r_col.g(), attenuation.b()*r_col.b())
         }

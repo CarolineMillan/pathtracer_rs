@@ -15,7 +15,7 @@ impl Metal {
     }
 
     pub fn new_from(albedo: Colour, mut fuzz: f32) -> Self {
-        if fuzz < 1.0 {fuzz = 1.0}
+        if fuzz > 1.0 {fuzz = 1.0}
         Self {
             albedo,
             fuzz,
@@ -38,7 +38,7 @@ impl Material for Metal {
             None
         }
     }
-    fn clone_box(&self) -> Box<dyn Material> {
+    fn clone_box(&self) -> Box<dyn Material + Send + Sync> {
         Box::new(self.clone())
     }
 }
