@@ -32,10 +32,5 @@ impl Ray {
         self.origin + t*self.direction
     }
 
-    /*
-    pub fn ray_colour(&self) -> Colour {
-        Colour::new()
-    }
-    */
 }
 

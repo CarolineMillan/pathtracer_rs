@@ -119,35 +119,6 @@ impl Camera {
         // Double-check deltas
         println!("Pixel deltas: u = {:?}, v = {:?}", self.pixel_delta_u, self.pixel_delta_v);
     }
-    
-/* 
-    pub fn initialise(&mut self) {
-        // image dimensions
-        self.image_height = self.image_width/self.aspect_ratio;
-        if self.image_height < 1.0 {self.image_height = 1.0}
-
-        self.center = Point3::new(0.0, 0.0, 0.0);
-
-        // Camera
-        let focal_length = 1.0;
-        let viewport_height = 2.0;
-        let viewport_width = viewport_height * (self.image_width/self.image_height);
-
-        // vectors along viewport edges
-        let viewport_u = Vector3::new(viewport_width, 0.0, 0.0);
-        let viewport_v = Vector3::new(0.0, -viewport_height, 0.0);
-
-        //how much of the vector is equal to one pixel?
-        let pixel_delta_u = viewport_u / self.image_width;
-        let pixel_delta_v = viewport_v / self.image_height;
-
-        //locate upper left pixel
-        let viewport_upper_left = 
-            self.center - Vector3::new(0.0,0.0, focal_length) - viewport_u/2.0 - viewport_v/2.0;
-        self.pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
-
-    }
-    */
 
     pub fn get_ray(&self, i: usize, j: usize) -> Ray {
         let offset = sample_square();
@@ -199,23 +170,6 @@ impl Camera {
         for row in rendered_rows {
             write!(file, "{}", row).unwrap();
         }
-
-        /*
-        for j in (0..self.image_height as usize).into_par_iter() {
-            println!("\rScanlines remaining: {} ", (self.image_height as usize)-j);
-            for i in 0..self.image_width as usize {
-                let mut pixel_colour = Colour::new();
-                for _sample in 0..self.samples_per_pixel {
-                    let r = self.get_ray(i, j);
-                    pixel_colour.0 += ray_colour(&r, self.max_depth, &world).0;
-                }
-                pixel_colour.0 *= self.pixel_samples_scale;
-
-                let _res = write_colour(&file, pixel_colour);
-            }
-        }
-
-*/
         println!("\rDone.               \n");
         Ok(())
     }

@@ -49,11 +49,9 @@ impl HitRecord {
     pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: &Vector3<f32>) {
         // set normal vector
 
-        //println!("in set face normal");
 
         self.front_face = ray.direction().dot(&outward_normal) < 0.0;
         if self.front_face {
-            //println!("front_face is true");
             self.normal = outward_normal.clone()
         } 
         else {self.normal = -outward_normal};

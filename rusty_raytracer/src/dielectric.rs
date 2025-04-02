@@ -7,7 +7,7 @@ pub struct Dielectric {
 }
 
 impl Dielectric {
-    pub fn new() -> Self {
+    pub fn default() -> Self {
         Self {
             refraction_index: 0.0,
         }

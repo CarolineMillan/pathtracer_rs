@@ -20,13 +20,6 @@ impl HittableList {
         // adds an object to objects
         self.objects.push(object);
     }
-
-    /*
-    pub fn clear(&mut self) {
-        // clears the list of objects
-        self.objects.clear();
-    }
-    */
 }
 
 impl Hittable for HittableList {
