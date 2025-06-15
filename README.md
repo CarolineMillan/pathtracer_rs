@@ -42,6 +42,7 @@ Here are some of the images I rendered using this code. The rest can be found in
 ![Defocus Blur](rendered_images/rendered_image20.png)
 
 To see antialiasing, compare the edges of the following two spheres:
+
 ![no antialiasing](rendered_images/rendered_image5.png)
 ![antialiasing](rendered_images/rendered_image6.png)
 
