@@ -27,8 +27,8 @@ The code is currently setup to render the final scene in the book at the resolut
 Requires Rust 1.84+.
 
 ```bash
-git clone https://github.com/CarolineMillan/rusty_raytracer.git 
-cd rusty_raytracer
+git clone https://github.com/CarolineMillan/pathtracer_rs.git 
+cd pathtracer_rs
 cargo build
 cargo run
 ```
